@@ -527,5 +527,48 @@ theorem supLeft_lt_infRight_of_equiv_numeric {x y : IGame} [y.Numeric] (h : x �
 theorem supLeft_lt_infRight_of_numeric (x : IGame) [x.Numeric] : supLeft x < infRight x :=
   supLeft_lt_infRight_of_equiv_numeric .rfl
 
+/-! ### Addition of a surreal number -/
+
+private def add_surreal (x : Surreal) (y : Cut) : Cut where
+  extent := {x + yl | yl ∈ y.left}
+  intent := {x + yr | yr ∈ y.right}
+  upperPolar_extent := by
+    ext z
+    simp only [upperPolar, mem_setOf_eq, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    refine ⟨fun H ↦ ⟨z-x, ?_⟩, fun ⟨w,⟨left,right⟩⟩ a_1 a_2 ↦ ?_⟩
+    · simp_all only [add_sub_cancel, and_true, ←notMem_left_iff]
+      exact fun zx_left ↦ ((add_sub_cancel x z) ▸ (H _ zx_left)).false
+    · subst right
+      exact (add_lt_add_iff_left _).mpr (left_lt_right a_2 left)
+  lowerPolar_intent := by {
+    ext z
+    simp only [lowerPolar, mem_setOf_eq, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    refine ⟨fun H ↦ ⟨z-x, ?_⟩, fun ⟨w,⟨left,right⟩⟩ a_1 a_2 ↦ ?_⟩
+    · simp_all only [add_sub_cancel, and_true, ←notMem_right_iff]
+      exact fun zx_left ↦ ((add_sub_cancel x z) ▸ (H (z-x) zx_left)).false
+    · subst right
+      exact (add_lt_add_iff_left _).mpr (left_lt_right left a_2)
+  }
+
+instance cut_add_action : AddAction Surreal Cut where
+  vadd := add_surreal
+  add_vadd := by
+    intro x y z ; ext w
+    simp only [add_surreal, instHVAdd, left, mem_setOf_eq, exists_exists_and_eq_and, add_assoc]
+  zero_vadd x := by
+    ext y
+    simp only [zero_add, exists_eq_right, left, setOf_mem_eq, add_surreal, instHVAdd]
+
+theorem sup_add_action (x : Surreal) (S : Set Cut) : (⨆ y ∈ S, x +ᵥ y) = x +ᵥ (⨆ y ∈ S, y) := by
+  ext y
+  simp only [HVAdd.hVAdd, cut_add_action, add_surreal, left_iSup, right_iSup]
+  simp only [mem_iUnion, left, mem_setOf_eq]
+  tauto
+
+theorem inf_add_action (x : Surreal) (S : Set Cut) : (⨅ y ∈ S, x +ᵥ y) = x +ᵥ (⨅ y ∈ S, y) := by
+  ext y
+  simp only [HVAdd.hVAdd, cut_add_action, add_surreal, left_iInf, right_iInf]
+  simp only [mem_iInter, left, mem_setOf_eq, ←eq_sub_iff_add_eq', existsAndEq, and_true]
+
 end Cut
 end Surreal
